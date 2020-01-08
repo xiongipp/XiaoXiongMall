@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>商品详情</title>
+    <script src="/js/vue.js"></script>
+    <script src="//unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+    <style>@import url("//unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css");</style>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="/css/mystyle.css">
+    <script src="/js/jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/Ajax.js"></script>
+</head>
+<body>
+<div id="app">
+<div class="container-fluid main">
+    <div class="row">
+<!--        左边空白美观-->
+        <div class="col-lg-1 col-md-12 col-sm-12 col-xs-12">
+
+        </div>
+        <div class="col-lg-10 col-md-12 col-sm-12 col-xs-12">
+            <!--    导航栏装饰用-->
+            <div class="row"><img src="/image/head.jpg" width="100%"></div>
+            <div class="row">
+                <div>
+                    <el-menu :default-active="activeIndex"
+                             class="el-menu-demo"
+                             mode="horizontal"
+                             background-color="#545c64"
+                             text-color="#fff"
+                             active-text-color="#ffd04b">
+                        <el-menu-item index='1'>详情</el-menu-item>
+                        <el-menu-item index='2'>联系客服</el-menu-item>
+                        <el-menu-item index='3'>相关网站</el-menu-item>
+                        <el-menu-item index='4'>了解更多</el-menu-item>
+                    </el-menu>
+                </div>
+            </div>
+            <!--            显示用户的名字，用户菜单，若用户未登录，显示登录，注册按钮-->
+            <div class="row" th:if="${session.user!=null}" th:value="${session.user}">
+                <ul>
+                    <li class="dropdown"th:if="${session.user!=null}">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <span th:text="'欢迎'+${session.user.getUsername()}"></span>
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a th:href="'orderInfo?uid='+${session.user.id}">我的订单</a></li>
+                            <li><a href="user/logout">退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="row" th:if="${session.user==null}">
+                <button type="button" class="btn btn-link" >登录</button>
+                <button type="button" class="btn btn-link">注册</button>
+            </div >
+<!--            商品详情-->
+            <div class="row">
+                <div class=" col-lg-5 col-md-12 col-sm-12 col-xs-12 ">
+                    <img th:src="${''+Good.getPicSrc()}" width="100%">
+                </div>
+                <div class=" col-lg-7 col-md-12 col-sm-12 col-xs-12 ">
+                    <h1 class="row">产品的描述</h1>
+                    <div class="row" style="background-color: #44DDDD ">
+                        <dd th:text="${Good.getGname()}"></dd>
+                        <em class="tm-yen" style="color: red">¥</em>
+                        <span style="color: red" th:text="${Good.getGprice()}"></span>
+                    </div>
+                    <div class="row">
+                        <el-table
+                                :data="tableData"
+                                style="width: 100%">
+                            <el-table-column
+                                    prop="ms1"
+                                    label=""
+                                    width="350">
+                            </el-table-column>
+                            <el-table-column
+                                    prop="ms2"
+                                    label=""
+                                    width="350">
+                            </el-table-column>
+                        </el-table>
+                    </div>
+                    <div class="row" style="margin-top: 30px">
+                        <el-row>
+                            <span>数量</span>
+                            <el-input v-model="input" id="buynum" placeholder="数量" style="width: 100px"></el-input>
+                            <button @click="addnum">+</button>
+                            <button @click="minnum">-</button>
+                        </el-row>
+                    </div>
+                    <div class="row" style="margin-top: 30px">
+                        <div class="col-lg-6" th:if="${session.user!=null}">
+                            <button type="button" class="btn btn-danger" th:onclick="|javascript:buygood(${session.user.id},${Good.id})|">立即购买</button>
+                        </div>
+                        <div class="col-lg-6" th:if="${session.user==null}">
+                            <button type="button" class="btn btn-danger" onclick=alert("请先登录")>立即购买</button>
+                        </div>
+                        <div class="col-lg-6">
+                            <button style="color: orange">加入购物车</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!--        右边空白美观-->
+        <div class="col-lg-1 col-md-12 col-sm-12 col-xs-12">
+
+
+        </div>
+    </div>
+
+</div>
+
+</div>
+
+</body>
+</html>
+
+
+<script>
+    function buygood(uid,gid) {
+        //得到购买输入框的值
+        var input=document.getElementById("buynum");
+        window.location.href = "/pay?userId=" + uid + "&gid=" + gid + "&num="+input.value;
+    }
+    var Main = {
+        data() {
+            return {
+                ajax:null,
+                activeIndex:'',
+                input:0,
+                tableData:[{
+                    ms1:'销量20',
+                    ms2:'产地美国'
+                }],
+                goodDtail:{
+                    gname:'',
+                    description:'',
+
+                }
+            }
+        },
+        created() {
+            let that=this;
+            that.ajax=new Ajax(this);
+        },
+        methods: {
+            addnum(){
+              let that=this;
+              if(that.input<50){
+                  that.input++;
+              }
+            },
+            minnum(){
+                let that=this;
+                if(that.input>0){
+                    that.input--;
+                }
+            },
+
+
+        }
+    }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>

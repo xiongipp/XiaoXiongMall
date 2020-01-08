@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/js/vue.js"></script>
+    <script src="//unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+    <style>@import url("//unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css");</style>
+    <script src="/js/Ajax.js"></script>
+</head>
+<body>
+<div id="app">
+<div class="container-fluid main" >
+
+ <!--        导航栏2.0-->
+    <h1>欢迎来到管理员界面</h1>
+    <template>
+        <el-tabs :tab-position="tabPosition" style="height: 100%;" @tab-click="handleClick">
+            <el-tab-pane label="商品信息" name="s1">
+                <!--商品详情表格-->
+                <template>
+<!--                    分页组件-->
+                    <el-pagination
+                            :page-size="page.size"
+                            layout="prev, pager, next"
+                            :total="page.total"
+                            :current-page="page.current"
+                            @current-change="HandergdetailPager"
+                    >
+                    </el-pagination>
+                    <!--  表格-->
+                    <el-table
+                            :data="goodDetailTableData"
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="selection"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="id"
+                                label="ID"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="gname"
+                                label="商品名"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="gprice"
+                                label="商品价格"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="ishot"
+                                label="商品是否为火热"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="tid"
+                                label="商品类型id"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="description"
+                                label="商品描述"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="sid"
+                                label="商品卖家Id"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="picSrc"
+                                label="商品图片"
+                                width="100">
+                            <template   slot-scope="scope">
+                                <img :src="scope.row.picSrc"  min-width="70" height="70" />
+                            </template>
+
+                        </el-table-column>
+
+                    </el-table>
+                    <!-- 一行功能按钮-->
+                    <el-row>
+                        <!--                编辑-->
+                        <span> 编辑 </span>
+                        <el-button type="primary" icon="el-icon-edit" circle
+                                   @click="editgoodDetail"></el-button>
+                        <!--  删除-->
+                        <span style="margin-left: 20px"> 删除</span>
+                        <el-button type="danger" icon="el-icon-delete" circle @click="deletegoods()":disabled="idList.length>0?false:true"></el-button>
+                        <!--  查找-->
+                        <span style="margin-left: 20px">查找</span>
+                        <el-button icon="el-icon-search" circle></el-button>
+                    </el-row>
+                </template>
+                <!--    修改商品详情的对话框-->
+                <el-dialog title="商品修改" :visible.sync="goodVisible" id="good">
+                    <el-form :model="good">
+                        <el-form-item label="商品名" :label-width="formLabelWidth">
+                            <el-input v-model="good.gname"></el-input>
+                        </el-form-item>
+                        <el-form-item label="商品价格" :label-width="formLabelWidth">
+                            <el-input v-model="good.gprice"></el-input>
+                        </el-form-item>
+                        <el-form-item label="商品是否火热" :label-width="formLabelWidth">
+                            <el-input v-model="good.ishot"></el-input>
+                        </el-form-item>
+                        <el-form-item label="商品类型id" :label-width="formLabelWidth">
+                            <el-input  v-model="good.tid" style="width: 100px"></el-input>
+<!--                            选择货物类型的下拉框-->
+                            <el-select v-model="good.tid" placeholder="请选择货物类型"
+                                       @focus="getGoodsType">
+                                <el-option
+                                        v-for="item in gtype"
+                                        :key="item.id"
+                                        :label="item.tname"
+                                        :value="item.id"
+                                        >
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="商品描述" :label-width="formLabelWidth">
+                            <el-input type="textarea"  v-model="good.description"></el-input>
+                        </el-form-item>
+                        <el-form-item label="商品图片" :label-width="formLabelWidth" >
+                                <el-input v-model="good.picSrc" style="width: 200px"></el-input>
+                                <el-avatar icon="el-icon-user-solid" :src="good.picSrc"></el-avatar>
+                        </el-form-item>
+                        <el-form-item label="卖家Id" :label-width="formLabelWidth">
+                            <el-input v-model="good.sid" style="width: 200px"></el-input>
+                            <el-select v-model="good.sid" placeholder="请选择卖家"
+                                       @focus="getSellerType">
+                                <el-option
+                                        v-for="item in stype"
+                                        :key="item.id"
+                                        :label="item.sellername"
+                                        :value="item.id"
+                                >
+                                </el-option>
+                            </el-select>
+
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="goodVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="goodVisible = false;handlerAlterGoodDetailTable()">确 定</el-button>
+                    </div>
+                </el-dialog>
+            </el-tab-pane>
+            <el-tab-pane label="商品类型" name="s2">
+                <!--商品类型表格-->
+                <template>
+                    <!--分页组件-->
+                    <el-pagination
+                            :page-size="page.size"
+                            layout="prev, pager, next"
+                            :total="page.total"
+                            :current-page="page.current"
+                            @current-change="HandergtypePager"
+                    >
+                    </el-pagination>
+                    <el-table
+                            :data="goodTypeTableData"
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="selection"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="id"
+                                label="ID"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="tname"
+                                label="商品类型名"
+                                width="100">
+                        </el-table-column>
+                    </el-table>
+                    <!--                功能按钮-->
+                    <el-row>
+                        <!--编辑插入功能按钮-->
+                        <span>编辑(插入)</span>
+                        <el-button type="primary" icon="el-icon-edit" circle @click="editType"></el-button>
+                        <!--删除-->
+                        <span style="margin-left: 20px">
+                    删除
+                </span>
+                        <!--当列表中无任何数据被选中时禁用删除按钮-->
+                        <el-button type="danger"
+                                   icon="el-icon-delete"
+                                   circle
+                                   @click="deleteType"
+                                   :disabled="idList.length>0?false:true"></el-button>
+                        <!-- 查找-->
+                        <span style="margin-left: 20px">查找</span>
+                        <el-button icon="el-icon-search" circle></el-button>
+                    </el-row>
+
+                </template>
+                <!--    修改商品种类的对话框-->
+                <el-dialog title="商品类型修改" :visible.sync="goodTypeFormVisible" id="type">
+                    <el-form>
+                        <el-form-item label="商品名" :label-width="formLabelWidth">
+                            <el-input v-model="goodstname"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="goodTypeFormVisible = false">取 消</el-button>
+                        <el-button type="primary"
+                                   @click="goodTypeFormVisible = false;handlerAlterGoodTypeTable()">确 定
+                        </el-button>
+                    </div>
+                </el-dialog>
+            </el-tab-pane>
+            <el-tab-pane label="用户信息" name="s3">
+                <!--用户信息表格-->
+                <template>
+                    <!--分页组件-->
+                    <el-pagination
+                            :page-size="page.size"
+                            layout="prev, pager, next"
+                            :total="page.total"
+                            :current-page="page.current"
+                            @current-change="HanderUserPager"
+                    >
+                    </el-pagination>
+                    <el-table
+                            :data="userTableData"
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="selection"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="id"
+                                label="ID"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="username"
+                                label="用户名"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="password"
+                                label="密码"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="email"
+                                label="邮箱"
+                                width="200">
+                        </el-table-column>
+                        <el-table-column
+                                prop="phonenumber"
+                                label="电话"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="realname"
+                                label="真实姓名"
+                                width="100">
+                        </el-table-column>
+
+                    </el-table>
+                    <!--                功能按钮-->
+                    <el-row>
+                        <!--编辑插入功能按钮-->
+                        <span>编辑(插入)</span>
+                        <el-button type="primary" icon="el-icon-edit" circle @click="edituser"></el-button>
+                        <!--删除-->
+                        <span style="margin-left: 20px">
+                    删除
+                </span>
+                        <!--当列表中无任何数据被选中时禁用删除按钮-->
+                        <el-button type="danger"
+                                   icon="el-icon-delete"
+                                   circle
+                                   @click="deleteUser"
+                                   :disabled="idList.length>0?false:true"></el-button>
+                        <!-- 查找-->
+                        <span style="margin-left: 20px">查找</span>
+                        <el-button icon="el-icon-search" circle></el-button>
+                    </el-row>
+                </template>
+                <!--    修改用户的对话框-->
+                <el-dialog title="用户信息更改":visible.sync="userDialogVisible">
+                    <el-form :model="user">
+                        <el-form-item label="用户名" :label-width="formLabelWidth">
+                            <el-input v-model="user.username"></el-input>
+                        </el-form-item>
+                        <el-form-item label="用户名" :label-width="formLabelWidth">
+                            <el-input v-model="user.password"></el-input>
+                        </el-form-item>
+                        <el-form-item label="邮箱" :label-width="formLabelWidth">
+                            <el-input v-model="user.email"></el-input>
+                        </el-form-item>
+                        <el-form-item label="电话" :label-width="formLabelWidth">
+                            <el-input v-model="user.phonenumber"></el-input>
+                        </el-form-item>
+                        <el-form-item label="真实姓名" :label-width="formLabelWidth">
+                            <el-input v-model="user.realname"></el-input>
+                        </el-form-item>
+
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="userDialogVisible = false">取 消</el-button>
+                        <el-button type="primary"
+                                   @click="userDialogVisible = false;handlerAlterUserTable()">确 定
+                        </el-button>
+                    </div>
+                </el-dialog>
+            </el-tab-pane>
+            <el-tab-pane label="管理员信息" name="s4">
+                <!--            管理员表格-->
+                <template>
+                    <!--                    分页组件-->
+                    <el-pagination
+                            :page-size="page.size"
+                            layout="prev, pager, next"
+                            :total="page.total"
+                            :current-page="page.current"
+                            @current-change="HanderadminPager"
+                    >
+                    </el-pagination>
+                    <el-table
+                            :data="adminTableData"
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="selection"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="id"
+                                label="ID"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="adname"
+                                label="管理员用户名"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="password"
+                                label="管理员密码"
+                                width="100">
+                        </el-table-column>
+
+                    </el-table>
+                    <el-row>
+                        <!--                编辑-->
+                        <span>
+                    编辑
+                </span>
+                        <el-button type="primary" icon="el-icon-edit" circle></el-button>
+                        <!--                删除-->
+                        <span style="margin-left: 20px">
+                    删除
+                </span>
+                        <el-button type="danger" icon="el-icon-delete" circle></el-button>
+                        <!--                查找-->
+                        <span style="margin-left: 20px">查找</span>
+                        <el-button icon="el-icon-search" circle></el-button>
+
+                    </el-row>
+
+
+                </template>
+            </el-tab-pane>
+            <el-tab-pane label="卖家个人信息" name="s5">
+                <!--            卖家表格-->
+                <template>
+                    <!--                    分页组件-->
+                    <el-pagination
+                            :page-size="page.size"
+                            layout="prev, pager, next"
+                            :total="page.total"
+                            :current-page="page.current"
+                            @current-change="handerSellerPage"
+                    >
+                    </el-pagination>
+                    <el-table
+                            :data="sellerTableData"
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange"
+                            >
+                        <el-table-column
+                                type="selection"
+                                width="100"
+                               >
+                        </el-table-column>
+                        <el-table-column
+                                prop="id"
+                                label="ID"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="sellername"
+                                label="卖家用户名"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="realname"
+                                label="卖家真名"
+                                width="100">
+                        </el-table-column>
+                        <el-table-column
+                                prop="password"
+                                label="卖家密码"
+                                width="100">
+                        </el-table-column>
+
+                    </el-table>
+                    <el-row>
+                        <!--                编辑-->
+                        <el-button type="primary" icon="el-icon-edit" circle @click="EditSeller">编辑</el-button>
+                        <!--                删除-->
+                        <el-button type="danger" icon="el-icon-delete" circle @click="DeleteSeller":disabled="idList.length>0?false:true">删除</el-button>
+                        <!--                添加-->
+                        <el-button icon="el-icon-circle-plus-outline" circle @click="AddSeller">添加</el-button>
+
+                    </el-row>
+
+
+                </template>
+<!--                卖家对话框-->
+                <template>
+                    <!--    修改卖家对话框-->
+                    <el-dialog title="改卖家信息" :visible.sync="SellerFormVisible">
+                        <el-form :model="sellerInfo">
+                            <el-form-item label="真实姓名" :label-width="formLabelWidth">
+                                <el-input v-model="sellerInfo.realname" autocomplete="off"></el-input>
+                            </el-form-item>
+                            <el-form-item label="用户名" :label-width="formLabelWidth">
+                                <el-input v-model="sellerInfo.sellername" autocomplete="off"></el-input>
+                            </el-form-item>
+                            <el-form-item label="密码" :label-width="formLabelWidth">
+                                <el-input v-model="sellerInfo.password" autocomplete="off"></el-input>
+                            </el-form-item>
+                        </el-form>
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="SellerFormVisible = false">取 消</el-button>
+                            <el-button type="primary" @click="SellerFormVisible = false;handlerAlterSellerTable()">确 定</el-button>
+                        </div>
+                    </el-dialog>
+                </template>
+            </el-tab-pane>
+            <a href="/">点我返回主页</a>
+        </el-tabs>
+    </template>
+</div>
+
+
+</div>
+
+</body>
+</html>
+<script>
+    var Main = {
+        data() {
+            return {
+                ajax:null,
+                goodTypeTableData:[],//商品类型表格数据
+                goodDetailTableData:[],//商品详情表格数据
+                adminTableData:[],//管理员表格数据
+                userTableData:[],//用户表格数据
+                sellerTableData:[],//卖家个人信息
+
+                search:'',
+                //这是与分页组件绑定的数据
+                page:{
+                   current:1,
+                   total:0,
+                   size:6,
+               },
+                tabPosition:'left',
+                idList:[],//id列表
+                goodstname:'',//货物类型名称
+                goodsname:'',//货物名字
+                SellerFormVisible:false,//卖家信息修改窗口
+                goodTypeFormVisible:false,//类型修改窗口可见
+                goodVisible:false,//货物详情修改窗口可见
+                userDialogVisible:false,//用户详情修改
+                formLabelWidth:'100px',
+                good:{
+                    id:'',
+                    gname:'',
+                    gprice:'',
+                    ishot:'',
+                    tid:'',
+                    description:'',
+                    picSrc:'',
+                    sid:'',
+                },//存放对话框数据（修改商品详情对话框）
+                admin:{
+                    id:'',
+                    adname:'',
+                    password:'',
+                },//存放对话框数据(修改管理员信息)
+                user:{
+                    id:'',
+                    username:'',
+                    password:'',
+                    email:'',
+                    phonenumber:'',
+                    realname:''
+                },//存放对话框数据(修改用户信息)
+                sellerInfo:{
+                    id:'',
+                    realname:'',
+                    sellername:'',
+                    password:''
+                },//存放对话框数据（修改卖家信息）
+
+            //    存放的货物类型的下拉框的值
+                gtype:[],
+            //    存放的商品类型下拉框
+                stype:[],
+            }
+        },
+        created(){
+            //页面渲染之前就传入vue对象
+            this.ajax=new Ajax(this);
+            this.getGoodsType();
+            this.getSellerType();
+        },
+        methods: {
+            //货物卖家类型的下拉框
+            getSellerType: function () {
+                let that = this;
+                that.ajax.get("seller", function (rs) {
+                    that.stype = rs.data.records;
+                    console.log(this.stype)
+                })
+            },
+
+            //获取商品的类型下拉框数据
+            getGoodsType: function () {
+                let that = this;
+                that.ajax.get("type", function (rs) {
+                    that.gtype = rs.data.records;
+                    console.log(this.gtype)
+                })
+            },
+
+
+            //用户信息分页
+            HanderUserPager(current) {
+                let that = this;
+                that.page.current = current;
+                that.showUser();
+            },
+            //商品分页的响应函数
+            HandergdetailPager(current) {
+                let that = this;
+                that.page.current = current;
+                that.showGoodInfo();
+
+            },
+            //商品类型分页的响应函数
+            HandergtypePager(current) {
+                let that = this;
+                that.page.current = current;
+                that.showGoodType();
+            },
+            //管理员显示分页组件响应函数
+            HanderadminPager(current) {
+                let that = this;
+                that.page.current = current;
+                that.showAdmin();
+            },
+            //卖家分页组件想应
+            handerSellerPage(current) {
+                let that = this;
+                that.page.current = current;
+                that.showSeller();
+            },
+
+
+            //tab管理
+            handleClick(tab, event) {
+                this.page.current = 1;
+                if (tab.name == 's1') {
+                    this.showGoodInfo()
+                }
+                if (tab.name == 's2') {
+                    this.showGoodType()
+                }
+                if (tab.name == 's3') {
+                    this.showUser()
+                }
+                if (tab.name == 's4') {
+                    this.showAdmin()
+                }
+                if (tab.name == 's5') {
+                    this.showSeller();
+                }
+            },
+            handleOpen(key, keyPath) {
+                console.log(key, keyPath);
+            },
+            handleClose(key, keyPath) {
+                console.log(key, keyPath);
+            },
+
+            //选择列表的处理函数
+            handleSelectionChange(section) {
+                let that = this;
+                that.idList = [];
+                //每选择一个就往idList里加一个id数据
+                section.forEach(element => {
+                    that.idList.push(element.id);
+                })
+            },
+
+
+            //点击修改类型按钮
+            editType() {
+                let that = this;
+                console.log(that.idList.length)
+                that.goodTypeFormVisible = true;//设置修改货物种类的对话框为可见
+                if (that.idList.length == 0) {
+                    that.goodTypeFormVisible = true;//设置修改货物种类的对话框为可见
+                }
+                if (that.idList.length == 1) {
+                    that.getTypeById(that.idList[0])
+                    that.goodTypeFormVisible = true;//设置修改货物种类的对话框为可见
+
+                }
+                if (that.idList.length > 1) {
+                    that.goodTypeFormVisible = false;
+                    console.log("你每次只能改一个")//设置修改货物种类的对话框不可见
+                    alert("你每次只能改一个")
+                }
+            },
+            //点击修改货物按钮
+            editgoodDetail() {
+                let that = this;
+                console.log(that.idList.length)
+                if (that.idList.length == 0) {
+                    that.goodVisible = true;//显示插入货物详情的对话框
+                }
+                if (that.idList.length == 1) {
+                    that.getGoodById(that.idList[0]);
+                    that.goodVisible = true;//显示修改货物的对话框
+                }
+                if (that.idList.length > 1) {
+                    alert("你一次只能改一个数据");
+                }
+
+
+            },
+            //点击修改用户按钮
+            edituser() {
+                let that = this;
+                console.log(that.idList.length)
+                if (that.idList.length == 0) {
+                    that.userDialogVisible = true;
+                }
+                if (that.idList.length == 1) {
+                    that.getUserById(that.idList[0])
+                    that.userDialogVisible = true;
+                }
+                if (that.idList.length > 1) {
+                    alert("你一次只能改一个数据");
+                }
+            },
+            //修改卖家
+            EditSeller(){
+                let that=this;
+                that.getSellerById(that.idList[0]);
+                that.SellerFormVisible=true
+            },
+            //添加卖家
+            AddSeller(){
+                let that=this;
+                that.SellerFormVisible=true
+            },
+
+
+            //点击确定处理类型修改或插入请求
+            handlerAlterGoodTypeTable() {
+                let that = this
+                if (that.idList.length == 1) {
+                    let that = this
+                    let data = {
+                        tname: that.goodstname,
+                        id: that.idList[0]
+                    }
+                    that.getTypeById(that.idList[0])
+                    console.log("要修改以下数据")
+                    console.log(data);
+                    that.ajax.put("type", function (rs) {
+                        alert(rs.msg)
+                        if (rs.code == 0) {
+                            that.showGoodType();//刷新前端表格数据
+                        }
+                    }, data)
+                }
+                if (that.idList.length == 0) {
+                    console.log("要插入以下数据")
+                    let data = {
+                        tname: that.goodstname,
+                    }
+                    console.log(data);
+                    that.ajax.post("type", function (rs) {
+                        alert(rs.msg)
+                        if (rs.code == 0) {
+                            that.showGoodType();//刷新前端表格数据
+                        }
+                    }, data)
+                }
+
+
+            },
+            //点击确定处理货物修改修改或插入请求
+            handlerAlterGoodDetailTable() {
+                let that = this;
+                if (that.idList.length == 1) {
+                    that.ajax.put("goods", function (rs) {
+                        if (rs.code == 0) {
+                            that.showGoodInfo();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.good)
+                }
+                if (that.idList.length == 0) {
+                    that.ajax.post("goods", function (rs) {
+                        if (rs.code == 0) {
+                            that.showGoodInfo();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.good)
+                }
+            },
+            //点击确定处理用户信息修改修改或插入请求
+            handlerAlterUserTable() {
+                let that = this;
+                console.log(that.idList.length)
+                if (that.idList.length == 1) {
+                    that.ajax.put("user", function (rs) {
+                        if (rs.code == 0) {
+                            that.showUser();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.user)
+                }
+                if (that.idList.length == 0) {
+                    that.user.id = '';
+                    that.ajax.post("user", function (rs) {
+                        if (rs.code == 0) {
+                            that.showUser();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.user)
+                }
+            },
+            //处理更改卖家的信息
+            handlerAlterSellerTable(){
+                let that = this;
+                console.log(that.idList.length)
+                if (that.idList.length == 1) {
+                    that.ajax.put("seller", function (rs) {
+                        if (rs.code == 0) {
+                            that.showSeller();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.sellerInfo)
+                }
+                if (that.idList.length == 0) {
+                    that.sellerInfo.id = '';
+                    that.ajax.post("seller", function (rs) {
+                        if (rs.code == 0) {
+                            that.showSeller();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.sellerInfo)
+                }
+            },
+
+
+            //点击删除类型按钮的操作
+            deleteType() {
+                let that = this;
+                console.log(that.idList.length)
+                this.ajax.delete("type?idList=" + that.idList, function (rs) {
+                    console.log(rs.msg)
+                })
+                that.showGoodType();
+            },
+            //删除商品的按钮函数
+            deletegoods() {
+                let that = this;
+                this.ajax.delete("goods?idList=" + that.idList, function (rs) {
+                    console.log(rs.msg)
+                    alert(rs.msg)
+                })
+                that.showGoodInfo();
+            },
+            //删除用户的按钮函数
+            deleteUser() {
+                let that = this;
+                this.ajax.delete("user?idList=" + that.idList, function (rs) {
+                    console.log(rs.msg)
+                    alert(rs.msg)
+                })
+                that.showUser();
+            },
+            //删除卖家
+            DeleteSeller(){
+                let that = this;
+                this.ajax.delete("seller?idList=" + that.idList, function (rs) {
+                    console.log(rs.msg)
+                    alert(rs.msg)
+                    that.showSeller();
+                })
+
+            },
+
+
+            getGoodById(goodId) {
+                let that = this;
+                that.ajax.get("goods/" + goodId, function (rs) {
+                    that.good = rs.data;
+                })
+            },
+            getTypeById(typeId) {
+                let that = this;
+                that.ajax.get("type/" + typeId, function (rs) {
+                    console.log(rs.data)
+                    that.goodstname = rs.data.tname;
+                })
+            },
+            getAdminById(adminId) {
+            },
+            getUserById(userId) {
+                let that = this;
+                that.ajax.get("user/" + userId, function (rs) {
+                    that.user = rs.data;
+                })
+            },
+
+            getSellerById(sellerId){
+                let that = this;
+                that.ajax.get("seller/" + sellerId, function (rs) {
+                    that.sellerInfo = rs.data;
+                })
+            },
+
+
+
+            showGoodType: function () {
+                let that = this;
+                that.ajax.get("type?size=" + that.page.size + "&current=" + that.page.current, function (rs) {
+                    console.log(rs);
+                    that.goodTypeTableData = rs.data.records;
+                    that.page.total = rs.data.total;
+                })
+            },//向后台请求货物详情的数据
+            showGoodInfo: function () {
+                let that = this;
+                that.ajax.get("goods?size=" + that.page.size + "&current=" + that.page.current, function (rs) {
+                    that.goodDetailTableData = rs.data.records;
+                    that.page.total = rs.data.total;
+                })
+            },//向后台请求货物详情的数据
+            showAdmin: function () {
+                let that = this;
+                that.ajax.get("admin?size=" + that.page.size + "&current=" + that.page.current, function (rs) {
+                    console.log(rs);
+                    that.adminTableData = rs.data.records;
+                    that.page.total = rs.data.total;
+                })
+            },//向后台请求管理员的数据
+            showUser: function () {
+                let that = this;
+                that.ajax.get("user??size=" + that.page.size + "&current=" + that.page.current, function (rs) {
+                    that.userTableData = rs.data.records;
+                    that.page.total = rs.data.total;
+                })
+            },
+            //展示卖家信息
+            showSeller: function () {
+                let that = this;
+                that.ajax.get("seller?size=" + that.page.size + "&current=" + that.page.current, function (rs) {
+                    console.log(rs);
+                    that.sellerTableData = rs.data.records;
+                    that.page.total = rs.data.total;
+                })
+            },
+        }
+
+
+        }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>

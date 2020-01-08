@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>这是卖家界面</title>
+    <script src="/js/vue.js"></script>
+    <script src="//unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+    <style>@import url("//unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css");</style>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="/css/mystyle.css">
+    <script src="/js/jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/Ajax.js"></script>
+
+</head>
+<body>
+<div id="app">
+    卖家在这里管理
+    <el-input v-model="sid">
+<!--用户订单-->
+
+    </el-input>
+    <el-tabs type="border-card">
+<!--        个人信息修改-->
+        <el-tab-pane>
+            <span slot="label"><i class="el-icon-s-check"></i>个人信息修改</span>
+            <el-card class="box-card">
+                <div slot="header" class="clearfix">
+                    <span>个人信息</span>
+                    <el-button style="float: right; padding: 3px 0" type="text" @click="alterInfo">修改个人信息</el-button>
+                </div>
+                <div class="text item" style="margin-bottom: 20px">
+                    卖家真实姓名：{{sellerInfo.realname}}
+                </div>
+                <div class="text item" style="margin-bottom: 20px">
+                    卖家登录名：{{sellerInfo.sellername}}
+                </div>
+                <div class="text item">
+                    卖家个人密码：{{sellerInfo.password}}
+                </div>
+                <div>
+                    <a href="/">返回主页</a>
+                </div>
+            </el-card>
+        </el-tab-pane>
+<!--        订单管理-->
+        <el-tab-pane>
+            <span slot="label"><i class="el-icon-s-goods"></i>去发货</span>
+<!--            订单表格-->
+            <template>
+                <el-table
+                        :data="orderListTable"
+                        style="width: 100%">
+                    <el-table-column
+                            prop="id"
+                            label="订单号"
+                            width="180">
+                    </el-table-column>
+                    <el-table-column
+                            prop="goodname"
+                            label="货物名"
+                            width="180">
+                    </el-table-column>
+                    <el-table-column
+                            prop="goodsrc"
+                            label="图片"
+                            width="180">
+                        <template   slot-scope="scope">
+                            <img :src="scope.row.goodsrc"  min-width="70" height="70" />
+                        </template>
+                    </el-table-column>
+                    <el-table-column
+                            prop="buynum"
+                            label="购买数量"
+                            width="180">
+                    </el-table-column>
+                    <el-table-column
+                            prop="paymoney"
+                            label="到账"
+                            width="180">
+                    </el-table-column>
+                    <el-table-column
+                            prop="buytime"
+                            label="下单时间"
+                            width="180">
+                    </el-table-column>
+                    <el-table-column
+                            prop="state"
+                            label="货物状态"
+                            width="180">
+                    </el-table-column>
+                    <el-table-column label="操作">
+                        <template slot-scope="scope">
+                            <el-button
+                                    size="mini"
+                                    @click="handleEdit(scope.$index, scope.row)"
+                                    :disabled="scope.row.state=='已发货'?true:false">发货</el-button>
+                            <el-button
+                                    size="mini"
+                                    type="danger"
+                                    @click="handleDelete(scope.$index, scope.row)">不给</el-button>
+                        </template>
+                    </el-table-column>
+
+                </el-table>
+            </template>
+
+        </el-tab-pane>
+<!--        商品管理-->
+        <el-tab-pane>
+            <span slot="label"><i class="el-icon-sold-out"></i>管理商品</span>
+            <el-button type="success"@click="upGoods">上架商品</el-button>
+            <el-button type="info" @click="alterGoods">修改商品信息</el-button>
+            <div style="background-color: yellow">卖家商品一览</div>
+            <!--                    分页组件-->
+            <el-pagination
+                    :page-size="page.size"
+                    layout="prev, pager, next"
+                    :total="page.total"
+                    :current-page="page.current"
+                    @current-change="HandergSellerGoodsPager"
+            >
+            </el-pagination>
+            <!--  表格-->
+            <el-table
+                    :data="goodDetailTableData"
+                    style="width: 100%"
+                    @selection-change="handleSelectionChange">
+
+                <el-table-column
+                        type="selection"
+                        width="100">
+                </el-table-column>
+                <el-table-column
+                        prop="id"
+                        label="ID"
+                        width="100">
+                </el-table-column>
+                <el-table-column
+                        prop="gname"
+                        label="商品名"
+                        width="100">
+                </el-table-column>
+                <el-table-column
+                        prop="gprice"
+                        label="商品价格"
+                        width="100">
+                </el-table-column>
+                <el-table-column
+                        prop="tid"
+                        label="商品类型id"
+                        width="100">
+                </el-table-column>
+                <el-table-column
+                        prop="description"
+                        label="商品描述"
+                        width="100">
+                </el-table-column>
+
+                <el-table-column
+                        prop="picSrc"
+                        label="商品图片"
+                        width="100">
+                    <template   slot-scope="scope">
+                        <img :src="scope.row.picSrc"  min-width="70" height="70" />
+                    </template>
+
+                </el-table-column>
+
+            </el-table>
+        </el-tab-pane>
+    </el-tabs>
+<!--    修改个人信息的对话框-->
+    <el-dialog title="改我的信息" :visible.sync="dialogFormVisible">
+        <el-form :model="sellerInfo">
+            <el-form-item label="真实姓名" :label-width="formLabelWidth">
+                <el-input v-model="sellerInfo.realname" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="用户名" :label-width="formLabelWidth">
+                <el-input v-model="sellerInfo.sellername" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" :label-width="formLabelWidth">
+                <el-input v-model="sellerInfo.password" autocomplete="off"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible = false">取 消</el-button>
+            <el-button type="primary" @click="dialogFormVisible = false;confrimAlter()">确 定</el-button>
+        </div>
+    </el-dialog>
+<!--    商品信息的对话框-->
+    <el-dialog title="商品修改" :visible.sync="goodVisible" id="good">
+        <el-form :model="good">
+            <el-form-item label="商品名" :label-width="formLabelWidth">
+                <el-input v-model="good.gname"></el-input>
+            </el-form-item>
+            <el-form-item label="商品价格" :label-width="formLabelWidth">
+                <el-input v-model="good.gprice"></el-input>
+            </el-form-item>
+            <el-form-item label="商品类型id" :label-width="formLabelWidth">
+                <el-input  v-model="good.tid" style="width: 100px"></el-input>
+                <!--                            选择货物类型的下拉框-->
+                <el-select v-model="good.tid" placeholder="请选择货物类型"
+                           @focus="getGoodsType">
+                    <el-option
+                            v-for="item in gtype"
+                            :key="item.id"
+                            :label="item.tname"
+                            :value="item.id"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="商品描述" :label-width="formLabelWidth">
+                <el-input type="textarea"  v-model="good.description"></el-input>
+            </el-form-item>
+            <el-form-item label="商品图片" :label-width="formLabelWidth" >
+                <el-input v-model="good.picSrc" style="width: 200px"></el-input>
+                <el-avatar icon="el-icon-user-solid" :src="good.picSrc"></el-avatar>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="goodVisible = false">取 消</el-button>
+            <el-button type="primary" @click="goodVisible = false;handlerAlterGoodDetailTable()">确 定</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+
+</body>
+</html>
+<script>
+    var Main = {
+
+        data() {
+            return {
+                ajax:null,
+                sid:'',
+                //对话框是否可见
+                dialogFormVisible:false,
+                goodVisible:false,
+                idList:[],//id列表
+
+                //卖家销售商品的表格数据
+                orderListTable:[],
+                //卖家提供的商品信息
+                goodDetailTableData:[],
+                //卖家个人信息
+                sellerInfo:{
+                    id:'',
+                    realname:'',
+                    sellername:'',
+                    password:''
+                },
+                formLabelWidth:'',
+                page:{
+                    current:1,
+                    total:0,
+                    size:5,
+                },
+                good:{
+                    id:'',
+                    gname:'',
+                    gprice:'',
+                    ishot:'',
+                    tid:'',
+                    description:'',
+                    picSrc:'',
+                    sid:'',
+                },//存放对话框数据（修改商品详情对话框）
+                  //    存放的货物类型的下拉框的值
+                gtype:[],
+
+            };
+        },
+        created() {
+            let that=this;
+            that.sid=that.getUrlKey('sellerId');
+            that.ajax=new Ajax(this);
+            that.getOrderList();
+            that.getSellerInfo();
+            that.getSellerGoods();
+            this.getGoodsType();
+
+        },
+        methods: {
+            //卖家上架的商品分页函数
+            HandergSellerGoodsPager(current){
+                let that = this;
+                that.page.current = current;
+                that.getSellerGoods();
+            },
+            showGoodInfo: function () {
+                let that = this;
+                that.ajax.get("goods?size=" + that.page.size + "&current=" + that.page.current, function (rs) {
+                    that.goodDetailTableData = rs.data.records;
+                    that.page.total = rs.data.total;
+                })
+            },//向后台请求货物详情的数据
+            //点击确定处理货物修改修改或插入请求
+            handlerAlterGoodDetailTable() {
+                let that = this;
+                console.log("修改货物详情")
+                //修改操作
+                if (that.idList.length== 1) {
+                    that.ajax.put("goods", function (rs) {
+                        if (rs.code == 0) {
+                            that.getSellerGoods();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.good)
+                }
+                //上架商品操作
+                if (that.idList.length == 0) {
+                    that.good.sid=that.sid;
+                    that.ajax.post("goods", function (rs) {
+                        if (rs.code == 0) {
+                            that.getSellerGoods();
+                            alert(rs.msg);
+                        } else {
+                            alert(rs.msg);
+                        }
+                    }, that.good)
+                }
+            },
+            //获取商品的类型下拉框数据
+            getGoodsType: function () {
+                let that = this;
+                that.ajax.get("type", function (rs) {
+                    that.gtype = rs.data.records;
+                    console.log(this.gtype)
+                })
+            },
+            //上架商品
+            upGoods(){
+                let that=this;
+                that.goodVisible=true;
+            },
+            //修改商品信息
+            alterGoods(){
+                let that=this;
+                if(that.idList.length==1){
+                    that.getGoodById(that.idList[0]);
+                    that.goodVisible=true;
+                }
+                if(that.idList.length==0){
+                    alert("请选择你要变更的信息")
+                }
+                if(that.idList.length>1){
+                    alert("你一次只能改一个")
+                }
+
+
+            },
+            //选择列表的处理函数
+            handleSelectionChange(section) {
+                let that = this;
+                that.idList = [];
+                //每选择一个就往idList里加一个id数据
+                section.forEach(element => {
+                    that.idList.push(element.id);
+                })
+            },
+            //确定更改个人信息
+            confrimAlter(){
+              let that =this;
+              that.ajax.put("seller",function (rs) {
+                  alert(rs.msg);
+              },that.sellerInfo)
+            },
+            //卖家修改自己的个人信息
+            alterInfo() {
+                this.dialogFormVisible = true;
+            },
+            //发货的函数
+            handleEdit(index, row) {
+                let that=this;
+                that.ajax.put("orderlist/alterState?orderId="+row.id,function (rs) {
+                    alert(rs.msg);
+                    that.getOrderList();
+                })
+            },
+            //不给的函数
+            handleDelete(index, row) {
+                console.log(index, row);
+            },
+            //获取地址栏参数的功能函数
+            getUrlKey(name) {
+                return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.href) || [, ""])[1].replace(/\+/g, '%20')) || null
+            },
+            //获取卖家的订单信息
+            getOrderList(){
+                let that=this;
+                that.ajax.get("seller/getOrder?sid="+this.sid,function (rs) {
+
+                    that.orderListTable=rs.data;
+                });
+            },
+            //获取卖家个人信息
+            getSellerInfo(){
+                let that=this;
+                that.ajax.get("seller/"+that.sid,function (rs) {
+                    that.sellerInfo=rs.data
+                    console.log(rs);
+                })
+            },
+            //获取卖家管理商品
+            getSellerGoods(){
+                let that=this;
+                that.ajax.get("goods/findBySid?sid="+that.sid+"&size=" + that.page.size + "&current=" + that.page.current,function (rs) {
+                    that.page.total=rs.data.total;
+                    that.goodDetailTableData=rs.data.records;
+                });
+            },
+
+            //根据Id得到商品信息
+            getGoodById(goodId) {
+                let that = this;
+                that.ajax.get("goods/" + goodId, function (rs) {
+                    that.good = rs.data;
+                })
+            },
+
+        },
+    }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户信息页面</title>
+    <script src="//unpkg.com/vue/dist/vue.js"></script>
+    <script src="//unpkg.com/element-ui@2.12.0/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>@import url("//unpkg.com/element-ui@2.12.0/lib/theme-chalk/index.css");</style>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="/css/mystyle.css">
+    <script src="/js/jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/Ajax.js"></script>
+</head>
+<body>
+<div class="container-fluid main">
+    <div class="row">
+        <h1>用户购买记录</h1>
+    </div>
+<!--    用户购买的商品表格-->
+    <div class="row" style="width:80%">
+        <table class="table table-striped">
+            <tr>
+                <td>
+                    购买商品
+                </td>
+                <td>
+                    购买件数
+                </td>
+                <td>
+                    付款数
+                </td>
+                <td>
+                    商品图片
+                </td>
+                <td>
+                    购买时间
+                </td>
+            </tr>
+            <tr th:each="order:${orderlist}">
+                <td th:text="${order.goodname}"></td>
+                <td th:text="${order.getBuynum()}"></td>
+                <td th:text="${order.getPaymoney()}"></td>
+                <td>
+                    <img th:src="${order.getGoodsrc()}"style="width: 50px;height: 50px">
+                </td>
+                <td th:text="${order.getBuytime()}"></td>
+            </tr>
+        </table>
+    </div>
+    <br>
+    <a href="/">点我返回主页</a>
+
+
+</div>
+</body>
+</html>
