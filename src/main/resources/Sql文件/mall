@@ -1,0 +1,69 @@
+create schema mall collate utf8_general_ci;
+
+create table admin
+(
+	id int auto_increment
+		primary key,
+	adname varchar(30) null,
+	password varchar(30) default '123' null
+);
+
+create table goods
+(
+	id int auto_increment
+		primary key,
+	gname varchar(30) null,
+	gprice bigint null,
+	ishot int(3) default 0 null,
+	t_id int null comment '类型的id',
+	description varchar(255) null,
+	pic_src varchar(255) null,
+	stocknum bigint default 30 null,
+	sid int default 1 null
+);
+
+create table seller
+(
+	id int(10) auto_increment
+		primary key,
+	realname varchar(40) null,
+	sellername varchar(40) null,
+	password varchar(16) null
+);
+
+create table type
+(
+	id int auto_increment
+		primary key,
+	tname varchar(30) null
+);
+
+create table user
+(
+	id int auto_increment
+		primary key,
+	username varchar(10) not null,
+	password varchar(10) null,
+	email varchar(30) null,
+	phonenumber bigint(16) null,
+	realname varchar(10) null,
+	constraint user_username_uindex
+		unique (username)
+);
+
+create table orderlist
+(
+	id int auto_increment
+		primary key,
+	userId int not null,
+	goodId int not null,
+	buynum int default 1 null,
+	paymoney double(10,0) null,
+	buytime datetime null,
+	Isdelivered varchar(20) default '未发货' null,
+	constraint goodId
+		foreign key (goodId) references goods (id),
+	constraint userId
+		foreign key (userId) references user (id)
+);
+
